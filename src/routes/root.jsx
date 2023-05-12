@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link, useLoaderData } from "react-router-dom";
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -46,14 +46,6 @@ function Root() {
               <ListItemText primary="Home" />
             </ListItemButton>
           </ListItem>
-          <ListItem key="Rover" component={Link} to="/rovers" disablePadding>
-          <ListItemButton>
-            <ListItemIcon>
-                <TwoWheelerIcon color="primary"/>
-            </ListItemIcon>
-            <ListItemText primary="Rovers" />
-          </ListItemButton>
-        </ListItem>
       </List>
     </div>
   );

@@ -19,11 +19,16 @@ const Item = styled(Paper)(({ theme }) => ({
 }));
 
 const RoverList = () => {
-    const [rovers, setRovers] = useState([]);
+    const [rovers, setRovers] = useState();
     
     const getData = async () => {
-        const { data } = await axios.get('https://api.nasa.gov/mars-photos/api/v1/rovers/?api_key=DEMO_KEY');
-        setRovers(data.rovers);
+        try{
+            const { data } = await axios.get('https://api.nasa.gov/mars-photos/api/v1/rovers/?api_key=DEMO_KEY');
+            setRovers(data.rovers);
+        }
+        catch(err){
+            console.log(err.message)
+        }
     };
 
     useEffect(() => {

@@ -6,13 +6,9 @@ import {
     styled,
 } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
-import moment from 'moment';
 import { useLoaderData } from 'react-router';
-
-const validDate = (date) => {
-    let dateformat = /^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$/;
-    return !!date.match(dateformat);
-}
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs from 'dayjs';
 
 const Item = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -23,47 +19,68 @@ const Item = styled(Paper)(({ theme }) => ({
   }));
 
 export async function loader({ params }) {
-    let date = params.date && validDate(params.date) ? params.date : moment().format("YYYY-MM-DD");
+    return await getData(params)
+}
+
+async function getData({date, name}){
+    let day = date ? dayjs(date) : dayjs()
+    let formattedDay = day.format('YYYY-MM-DD')
     
-    let rover = {
-        name: params.roverName,
-        date: date
+    const { data } = await axios.get(`https://api.nasa.gov/mars-photos/api/v1/rovers/${name}/photos?earth_date=${formattedDay}&api_key=DEMO_KEY`)
+    
+    return {
+        day: day,
+        photos: data.photos,
+        name: name
     }
-    
-    return rover;
 }
 
 export default function RoverView() {
-    const [roverPhotos, setRoverPhotos] = useState([]);
-    const rover = useLoaderData();
-
-    const getData = async () => {
-        const { data } = await axios.get(`https://api.nasa.gov/mars-photos/api/v1/rovers/${rover.name}/photos?earth_date=${rover.date}&api_key=DEMO_KEY`);
-        setRoverPhotos(data.photos);
-    };
+    const {photos, day, name} = useLoaderData();
+    const [roverPhotos, setRoverPhotos] = useState(photos);
+    const [date, setDate] = useState(day)
 
     useEffect(() => {
-        getData();
-    }, []);
+        if(day !== date){
+            let params = {
+                date: date.format('YYYY-MM-DD'),
+                name: name,
+            }
+
+            getData(params).then(data => {
+                let photos = data.photos
+                setRoverPhotos(photos)
+            })
+        }
+    },[date])
 
     return (
-        <div id="roverList">
-            <Box sx={{ width: '100%' }}>
-                <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
-                    {roverPhotos.length > 0 && roverPhotos.map(photo => (
-                        <Grid xs={12} sm={6} key={photo.id}>
-                            <Item>
-                                <img
-                                    src={photo.img_src}
-                                    style={{ maxWidth: "100%" }}
-                                    alt="rover photo"
-                                    loading="lazy"
-                                />
-                            </Item>
+        <div id="roverPhotos">
+            <DatePicker
+                label="Controlled picker"
+                value={date}
+                onChange={(newValue) => setDate(newValue)}
+            />
+            <p>Pick a date to view photos from the rover.</p>
+            <p>Please note, not all date's will have photos.</p>
+            {roverPhotos.length > 0 &&
+                <Box sx={{ width: '100%' }}>
+                    <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
+                        {roverPhotos && roverPhotos.length > 0 && roverPhotos.map(photo => (
+                            <Grid xs={12} sm={6} key={photo.id}>
+                                <Item>
+                                    <img
+                                        src={photo.img_src}
+                                        style={{ maxWidth: "100%" }}
+                                        alt="rover photo"
+                                        loading="lazy"
+                                    />
+                                </Item>
+                            </Grid>
+                        ))}
                         </Grid>
-                    ))}
-                    </Grid>
-            </Box>
+                </Box>
+            }
         </div>
     );
 }
